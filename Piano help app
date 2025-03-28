@@ -1,0 +1,158 @@
+import tkinter as tk
+from datetime import datetime
+import threading
+import random
+import time
+import webbrowser
+
+class PianoHelpApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Piano Help App")
+        self.root.geometry("900x600")
+        
+        # Background with Gradient Color
+        self.root.configure(bg="#28334A")  
+
+        # Top Title
+        title_frame = tk.Frame(root, bg="#28334A", highlightbackground="#FFD700", highlightthickness=3)
+        title_frame.pack(fill=tk.X)
+        tk.Label(title_frame, text="Piano Help App", bg="#28334A", fg="#FFD700",
+                 font=("Helvetica", 24, "bold"), relief="flat").pack(pady=10)
+
+        # Button Column
+        button_frame = tk.Frame(root, bg="#404B69", width=150)
+        button_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        self.create_button(button_frame, "Provide Tips", self.show_tips).pack(pady=20)
+        self.create_button(button_frame, "Metronome", self.show_metronome).pack(pady=20)
+        self.create_button(button_frame, "Practice Tracker", self.show_tracker).pack(pady=20)
+        self.create_button(button_frame, "Teacher Finder", self.open_teacher_link).pack(pady=20)
+
+        # Output Area
+        self.output_frame = tk.Frame(root, bg="#404B69", highlightbackground="#FFD700", highlightthickness=2)
+        self.output_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Logged Hours Area
+        self.logged_hours_frame = tk.Frame(root, bg="#404B69", highlightbackground="#FFD700", highlightthickness=2, width=150)
+        self.logged_hours_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
+        tk.Label(self.logged_hours_frame, text="Practice Logs", bg="#404B69", fg="#FFD700",
+                 font=("Helvetica", 16, "bold"), relief="flat").pack(pady=10)
+
+        self.logs_list = tk.Text(self.logged_hours_frame, bg="#404B69", fg="white", font=("Helvetica", 12), height=30, width=20,
+                                 relief="flat")
+        self.logs_list.pack()
+
+        # Add 30 Animated Pianos to the Background
+        self.canvas = tk.Canvas(self.output_frame, bg="#404B69", highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.pianos = []
+        for _ in range(30):
+            x, y = random.randint(0, 900), random.randint(0, 600)
+            piano = self.canvas.create_text(x, y, text="🎹", font=("Helvetica", 16), fill="#FFD700")
+            self.pianos.append(piano)
+        self.animate_pianos()
+
+    def create_button(self, parent, text, command):
+        return tk.Button(parent, text=text, font=("Helvetica", 14, "bold"), bg="#FFD700",
+                         fg="#28334A", activebackground="#FFD700", activeforeground="#28334A",
+                         command=command, relief="raised", borderwidth=2)
+
+    def show_tips(self):
+        self.clear_output()
+        tk.Label(self.output_frame, text="Enter Your Struggles:", bg="#404B69", fg="#FFD700",
+                 font=("Helvetica", 16, "bold"), relief="flat").pack(pady=10)
+        entry = tk.Entry(self.output_frame, font=("Helvetica", 14), relief="flat")
+        entry.pack(pady=10)
+
+        def provide_tips():
+            struggles = entry.get().lower()
+            if "timing" in struggles:
+                message = "Focus on rhythm exercises with a metronome."
+            elif "accuracy" in struggles:
+                message = "Practice slowly and break songs into sections."
+            elif "speed" in struggles:
+                message = "Start slowly, then gradually increase tempo."
+            else:
+                message = "Keep practicing consistently!"
+            tk.Label(self.output_frame, text=message, bg="#404B69", fg="#FFD700", font=("Helvetica", 14)).pack(pady=10)
+
+        tk.Button(self.output_frame, text="Get Tips", command=provide_tips, bg="#FFD700", fg="#28334A",
+                  font=("Helvetica", 14, "bold")).pack(pady=10)
+
+    def show_metronome(self):
+        self.clear_output()
+        tk.Label(self.output_frame, text="Metronome (BPM):", bg="#404B69", fg="#FFD700",
+                 font=("Helvetica", 16, "bold"), relief="flat").pack(pady=10)
+        bpm_entry = tk.Entry(self.output_frame, font=("Helvetica", 14), relief="flat")
+        bpm_entry.pack(pady=10)
+
+        def start_metronome():
+            bpm = int(bpm_entry.get())
+            self.metronome_running = True
+            threading.Thread(target=self.metronome_tick, args=(bpm,), daemon=True).start()
+
+        tk.Button(self.output_frame, text="Start Metronome", command=start_metronome, bg="#FFD700", fg="#28334A",
+                  font=("Helvetica", 14, "bold")).pack(pady=10)
+
+        def stop_metronome():
+            self.metronome_running = False
+
+        tk.Button(self.output_frame, text="Stop Metronome", command=stop_metronome, bg="#FFD700", fg="#28334A",
+                  font=("Helvetica", 14, "bold")).pack(pady=10)
+
+    def show_tracker(self):
+        self.clear_output()
+        tk.Label(self.output_frame, text="Daily Practice Tracker", bg="#404B69", fg="#FFD700",
+                 font=("Helvetica", 16, "bold")).pack(pady=10)
+
+        tk.Label(self.output_frame, text="Log Hours Practiced:", bg="#404B69", fg="#FFD700", font=("Helvetica", 14)).pack(pady=5)
+        hours_entry = tk.Entry(self.output_frame, font=("Helvetica", 14), relief="flat")
+        hours_entry.pack(pady=5)
+
+        def log_practice():
+            hours = hours_entry.get()
+            now = datetime.now()
+            timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+            self.logs_list.insert(tk.END, f"{timestamp} - {hours} hours\n")
+            self.logs_list.see(tk.END)
+
+        tk.Button(self.output_frame, text="Log Practice", command=log_practice, bg="#FFD700", fg="#28334A",
+                  font=("Helvetica", 14, "bold")).pack(pady=10)
+
+    def open_teacher_link(self):
+        webbrowser.open("https://www.rcmusic.com/find-a-teacher")
+
+    def clear_output(self):
+        for widget in self.output_frame.winfo_children():
+            widget.destroy()
+
+    def metronome_tick(self, bpm):
+        while self.metronome_running:
+            print("Tick")
+            time.sleep(60 / bpm)
+
+    def animate_pianos(self):
+        def move():
+            for piano in self.pianos:
+                x, y = self.canvas.coords(piano)
+                dx, dy = random.randint(-3, 3), random.randint(-3, 3)
+                self.canvas.move(piano, dx, dy)
+
+                #  bounds
+                x, y = self.canvas.coords(piano)
+                if x < 0: x = 900
+                if x > 900: x = 0
+                if y < 0: y = 600
+                if y > 600: y = 0
+                self.canvas.coords(piano, x, y)
+
+            self.root.after(50, move)
+
+        move()
+
+# Run 
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PianoHelpApp(root)
+    root.mainloop()
